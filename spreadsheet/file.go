@@ -2,15 +2,13 @@ package spreadsheet
 
 import (
 	"bufio"
+	"errors"
 	"os"
 	"strconv"
 	"strings"
 )
 
-const FORMAT string = ".csv"
-
-func (s *Sheet) SaveToFile() error {
-	filename := s.Name + FORMAT
+func (s *Sheet) SaveToFile(filename string) error {
 	file, err := os.Create(filename)
 	if err != nil {
 		return err
@@ -23,35 +21,34 @@ func (s *Sheet) SaveToFile() error {
 			if cell.isValid() {
 				_, err := file.WriteString(strconv.Itoa(cell.value))
 				if err != nil {
-					return err
+					return errors.New("Error While Writing Values: " + err.Error())
 				}
 			} else {
 				_, err := file.WriteString("")
 				if err != nil {
-					return err
+					return errors.New("Error While Writing Empties: " + err.Error())
 				}
 			}
 			if j < s.cols-1 {
 				_, err := file.WriteString(",")
 				if err != nil {
-					return err
+					return errors.New("Error While Writing Commas: " + err.Error())
 				}
 			}
 		}
 		_, err := file.WriteString("\n")
 		if err != nil {
-			return err
+			return errors.New("Error While Writing Newlines: " + err.Error())
 		}
 	}
 
 	return nil
 }
 
-func LoadFromFile(name string) (*Sheet, error) {
-	filename := name + FORMAT
+func LoadFromFile(filename string, name string) (*Sheet, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("Error While Loading File: " + err.Error())
 	}
 	defer file.Close()
 
@@ -66,7 +63,7 @@ func LoadFromFile(name string) (*Sheet, error) {
 			if value != "" {
 				intValue, err := strconv.Atoi(value)
 				if err != nil {
-					return nil, err
+					return nil, errors.New("Error While Converting str2int: " + err.Error())
 				}
 				row[j].setValue(intValue)
 			}
