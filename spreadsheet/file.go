@@ -20,7 +20,7 @@ func (s *Sheet) SaveToFile() error {
 	for i := 0; i < s.rows; i++ {
 		for j := 0; j < s.cols; j++ {
 			cell := s.grid[i][j]
-			if cell.IsValid() {
+			if cell.isValid() {
 				_, err := file.WriteString(strconv.Itoa(cell.value))
 				if err != nil {
 					return err
@@ -68,7 +68,7 @@ func LoadFromFile(name string) (*Sheet, error) {
 				if err != nil {
 					return nil, err
 				}
-				row[j].SetValue(intValue)
+				row[j].setValue(intValue)
 			}
 		}
 		grid = append(grid, row)

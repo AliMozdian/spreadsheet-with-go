@@ -71,7 +71,7 @@ func open(args []string) {
 	}
 
 	if crntSheet != nil {
-		fmt.Printf("There is already a spreadsheet open (%s), You should close it first!", crntSheet.Name)
+		fmt.Printf("There is already a spreadsheet open (%s), You should close it first!\n", crntSheet.Name)
 		confirmClosing()
 	}
 
@@ -83,7 +83,7 @@ func open(args []string) {
 	}
 
 	crntSheet = sh
-	fmt.Printf("Spreadsheet (%s) is open now...", sh.Name)
+	fmt.Printf("Spreadsheet (%s) is open now...\n", sh.Name)
 }
 
 func confirmClosing() {
@@ -94,17 +94,14 @@ func confirmClosing() {
 
 	switch conf {
 	case "y", "yes", "s", "save":
-
 		err := crntSheet.SaveToFile()
 		if err != nil {
 			fmt.Println("Error While Saving File:", err.Error())
 			os.Exit(2)
 		}
-
 		close([]string{})
 
 	case "d", "discard":
-
 		close([]string{})
 
 	default:
@@ -120,7 +117,74 @@ func close(args []string) {
 	}
 	name := crntSheet.Name
 	crntSheet = nil
-	fmt.Printf("Spreadsheet (%s) has been closed.", name)
+	fmt.Printf("Spreadsheet (%s) has been closed.\n", name)
+}
+
+func getAt(args []string) {
+	checkOpenSheet()
+	if len(args) != 3 {
+		fmt.Println("You should follow this pattern: get <row> <col>")
+		os.Exit(1)
+	}
+
+	r, err := strconv.Atoi(args[1])
+	if err != nil {
+		fmt.Println("The row must be int!")
+		os.Exit(1)
+	}
+
+	c, err := strconv.Atoi(args[2])
+	if err != nil {
+		fmt.Println("The col must be int!")
+		os.Exit(1)
+	}
+
+	val, err := crntSheet.GetValueAt(r, c)
+	if err != nil {
+		fmt.Println("Error While Getting Value:", err.Error())
+		os.Exit(1) // this is not a code.2 error because the reason mostly is a user miss-input case
+	}
+
+	// happy scenario :)
+	fmt.Printf("Cell value at (%d, %d): %d\n", r, c, val)
+}
+
+func setAt(args []string) {
+	checkOpenSheet()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: set <row> <col> <value>")
+		os.Exit(1)
+	}
+
+	r, err := strconv.Atoi(args[1])
+	if err != nil {
+		fmt.Println("The row must be int!")
+		os.Exit(1)
+	}
+
+	c, err := strconv.Atoi(args[2])
+	if err != nil {
+		fmt.Println("The col must be int!")
+		os.Exit(1)
+	}
+
+	val, err := strconv.Atoi(args[3])
+	if err != nil {
+		fmt.Println("The value must be int!")
+		os.Exit(1)
+	}
+
+	err = crntSheet.SetValueAt(r, c, val)
+	if err != nil {
+		fmt.Println("Error While Setting Value:", err.Error())
+		os.Exit(1)
+	}
+
+	fmt.Printf("New value at (%d, %d): %d\n", r, c, val)
+}
+
+func help() {
+	fmt.Println("This is the help function. To be implemented...")
 }
 
 func main() {
@@ -138,5 +202,11 @@ func main() {
 		open(os.Args)
 	case "close":
 		close(os.Args)
+	case "get":
+		getAt(os.Args)
+	case "set":
+		setAt(os.Args)
+	default:
+		help()
 	}
 }
