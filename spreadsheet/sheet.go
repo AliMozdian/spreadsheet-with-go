@@ -9,7 +9,7 @@ type cell struct {
 	valid bool
 }
 
-func (c cell) IsValid() bool {
+func (c cell) isValid() bool {
 	return c.valid
 }
 
@@ -20,12 +20,12 @@ func (c cell) Value() (int, error) {
 	return c.value, nil
 }
 
-func (c *cell) SetValue(value int) {
+func (c *cell) setValue(value int) {
 	c.value = value
 	c.valid = true
 }
 
-func (c *cell) Clear() {
+func (c *cell) clear() {
 	c.valid = false
 }
 
@@ -55,7 +55,7 @@ func (s *Sheet) SetValueAt(row, col, value int) error {
 	if row < 0 || row >= s.rows || col < 0 || col >= s.cols {
 		return errors.New("Invalid row or column")
 	}
-	s.grid[row][col].SetValue(value)
+	s.grid[row][col].setValue(value)
 	return nil
 }
 
@@ -70,7 +70,7 @@ func (s *Sheet) CountValidsIn(r1, r2, c1, c2 int) int {
 	count := 0
 	for i := r1; i <= r2; i++ {
 		for j := c1; j <= c2; j++ {
-			if s.grid[i][j].IsValid() {
+			if s.grid[i][j].isValid() {
 				count++
 			}
 		}
