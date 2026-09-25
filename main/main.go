@@ -27,7 +27,9 @@ func crntSheetName() (string, error) {
 	if err != nil {
 		return "", errors.New("Error While Reading CRNT: " + err.Error())
 	}
-	return string(content), nil // I hope this doesn't lead to panic :)
+	name := string(content) // I hope this doesn't lead to panic :)
+	name = strings.Trim(name, "\n")
+	return name, nil
 }
 
 func fileName(name string) string {
@@ -44,7 +46,7 @@ func checkOpenSheet() {
 	name, err := crntSheetName()
 	if err != nil {
 		fmt.Println(err.Error())
-		os.Exit(1)
+		os.Exit(2)
 	}
 	if name == "" {
 		fmt.Println("There is no open spreadsheet!")
@@ -59,7 +61,7 @@ func openSheet(name string) error {
 		return errors.New("Error While openning CRNT: " + err.Error())
 	}
 	defer file.Close()
-	_, err = file.WriteString(name)
+	_, err = file.WriteString(name + "\n")
 	if err != nil {
 		return errors.New("Error While Writing on CRNT: (name=" + name + ")" + err.Error())
 	}
@@ -167,6 +169,8 @@ func createCmd(args []string) {
 			}
 		}
 	}
+
+	fmt.Printf("Spreadsheet (%s) successfully created with %d rows and %d cols, initiated with empty cells\n", name, rows, cols)
 }
 
 func openCmd(args []string) {
