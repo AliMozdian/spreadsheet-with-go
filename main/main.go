@@ -18,7 +18,7 @@ var crntSheet *sheet.Sheet = nil
 func checkOpenSheet() {
 	// use this in sheet-required commands
 	if crntSheet == nil {
-		fmt.Print("There is no open spreadsheet!")
+		fmt.Println("There is no open spreadsheet!")
 		os.Exit(1)
 	}
 }
@@ -65,7 +65,7 @@ func create(args []string) {
 }
 
 func open(args []string) {
-	if len(args) != 2 {
+	if len(args) != 3 {
 		fmt.Println("You should follow this pattern: open <name>")
 		os.Exit(1)
 	}
@@ -75,7 +75,7 @@ func open(args []string) {
 		confirmClosing()
 	}
 
-	name := args[1]
+	name := args[2]
 	sh, err := sheet.LoadFromFile(name)
 	if err != nil {
 		fmt.Println("Error While Loading File:", err.Error())
@@ -83,7 +83,7 @@ func open(args []string) {
 	}
 
 	crntSheet = sh
-	fmt.Printf("Spreadsheet (%s) is open now...\n", sh.Name)
+	fmt.Printf("Spreadsheet (%s) is open now...\n", crntSheet.Name)
 }
 
 func confirmClosing() {
@@ -111,7 +111,7 @@ func confirmClosing() {
 
 func close(args []string) {
 	checkOpenSheet()
-	if len(args) > 1 {
+	if len(args) > 2 {
 		fmt.Println("This command takes no arguments!")
 		os.Exit(1)
 	}
@@ -122,18 +122,18 @@ func close(args []string) {
 
 func getAt(args []string) {
 	checkOpenSheet()
-	if len(args) != 3 {
+	if len(args) != 4 {
 		fmt.Println("You should follow this pattern: get <row> <col>")
 		os.Exit(1)
 	}
 
-	r, err := strconv.Atoi(args[1])
+	r, err := strconv.Atoi(args[2])
 	if err != nil {
 		fmt.Println("The row must be int!")
 		os.Exit(1)
 	}
 
-	c, err := strconv.Atoi(args[2])
+	c, err := strconv.Atoi(args[3])
 	if err != nil {
 		fmt.Println("The col must be int!")
 		os.Exit(1)
@@ -151,24 +151,24 @@ func getAt(args []string) {
 
 func setAt(args []string) {
 	checkOpenSheet()
-	if len(args) != 4 {
+	if len(args) != 5 {
 		fmt.Println("You should follow this pattern: set <row> <col> <value>")
 		os.Exit(1)
 	}
 
-	r, err := strconv.Atoi(args[1])
+	r, err := strconv.Atoi(args[2])
 	if err != nil {
 		fmt.Println("The row must be int!")
 		os.Exit(1)
 	}
 
-	c, err := strconv.Atoi(args[2])
+	c, err := strconv.Atoi(args[3])
 	if err != nil {
 		fmt.Println("The col must be int!")
 		os.Exit(1)
 	}
 
-	val, err := strconv.Atoi(args[3])
+	val, err := strconv.Atoi(args[4])
 	if err != nil {
 		fmt.Println("The value must be int!")
 		os.Exit(1)
@@ -206,7 +206,9 @@ func main() {
 		getAt(os.Args)
 	case "set":
 		setAt(os.Args)
-	default:
+	case "help":
 		help()
+	default:
+		fmt.Printf("Unkown command '%s'! You can see help by using 'help' command ^_^\n", cmd)
 	}
 }
