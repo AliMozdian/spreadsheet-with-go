@@ -146,7 +146,7 @@ func createCmd(args []string) {
 		os.Exit(1)
 	}
 
-	sh := sheet.NewBlankSheet(rows, cols, name)
+	sh := sheet.New(rows, cols, name)
 
 	err = sh.SaveToFile(fileName(sh.Name))
 	if err != nil {

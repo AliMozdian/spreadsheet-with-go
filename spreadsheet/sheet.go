@@ -31,21 +31,22 @@ func (c *cell) clear() {
 	c.valid = false
 }
 
-// Useful for Range Passing
+// A part of a Sheet (2D Range) -has access to the parent Sheet
 type Area struct {
-	r1 int // left edge
-	r2 int // right edge
-	c1 int // top edge
-	c2 int // bottom edge
+	sh *Sheet // the Sheet that this Area is belong to
+	r1 int    // left edge
+	c1 int    // top edge
+	r2 int    // right edge
+	c2 int    // bottom edge
 }
 
-func NewArea(sh Sheet, r1, r2, c1, c2 int) (*Area, error) {
+func NewArea(sh *Sheet, r1, c1, r2, c2 int) (*Area, error) {
 	// create an 2DArea from (r1, c1) and (r2, c2) and validates the indexes
 	// but I'm not sure if it's the best way of handling that, something doesn't feel right!
 	if r1 < 0 || r2 < r1 || r2 >= sh.rows || c2 < c1 || c1 < 0 || c2 >= sh.cols {
 		return nil, errors.New("Area Arguments must follow 0 <= r1 <= r2 < rows and 0 <= c1 <= c2 < cols")
 	}
-	return &Area{r1: r1, r2: r2, c1: c1, c2: c2}, nil
+	return &Area{sh: sh, r1: r1, c1: c1, r2: r2, c2: c2}, nil
 }
 
 func (a Area) height() int {
@@ -57,7 +58,29 @@ func (a Area) width() int {
 }
 
 func (a1 Area) sameShapeAs(a2 Area) bool {
+	// returns true if hight and width of the two areas is the same
+	// I'm not sure wether to pass by pointer is better
+	// (optimization vs making sure it doesn't change it)
 	return a1.height() == a2.height() && a1.width() == a2.width()
+}
+
+func (aSrc *Area) CopyValuesTo(aDst *Area) error {
+	// copies the value of cells in aSrc Area, to cells in aDst Area
+	if !aSrc.sameShapeAs(*aDst) {
+		return errors.New("The Areas of Src & Dst of Copy should be in the same shape (equal height & width)")
+	}
+	// for optimization purposes I guess :))
+	sSrc, sDst := aSrc.sh, aDst.sh
+	h, w := aSrc.height(), aSrc.width()
+	r1Src, c1Src := aSrc.r1, aSrc.c1
+	r1Dst, c1Dst := aDst.r1, aDst.c1
+
+	for i := 0; i < h; i++ {
+		for j := 0; j < w; j++ {
+			sDst.grid[r1Dst+i][c1Dst+j] = sSrc.grid[r1Src+i][c1Src+j] // copies each cell
+		}
+	}
+	return nil
 }
 
 // Sheet represents a 2D grid of integers with a name.
@@ -69,9 +92,10 @@ type Sheet struct {
 	Name string
 }
 
-func NewBlankSheet(rows, cols int, name string) *Sheet {
-	// fixed size row and column grid, for now we don't support dynamic resizing
-	// handle invalid row and column access in SetValue and GetValue methods
+func New(rows, cols int, name string) *Sheet {
+	// New Blank Sheet with given {fixed} rows and cols and {unique} name
+	// Attention: fixed size row and column grid, for now we don't support dynamic resizing
+	// Handle invalid row and column access in SetValue and GetValue methods
 	grid := make([][]cell, rows)
 	for i := range grid {
 		grid[i] = make([]cell, cols)
@@ -82,26 +106,36 @@ func NewBlankSheet(rows, cols int, name string) *Sheet {
 	return &Sheet{grid: grid, rows: rows, cols: cols, Name: name}
 }
 
-func (sSrc *Sheet) CopyValuesTo(sDst *Sheet, aSrc, aDst Area) error {
-	// copies the value of cells in aSrc Area from sSrc Sheet, to cells in aDst Area from sDst Sheet
-	if !aSrc.sameShapeAs(aDst) {
-		return errors.New("The Areas of Source and Destination of Copy should be in the same shape (equal deltaRows & deltaCols)")
-	}
-	// for optimization purposes I guess :))
-	r1Src, c1Src := aSrc.r1, aSrc.c1
-	r1Dst, c1Dst := aDst.r1, aDst.c1
-
-	for i := 0; i < aSrc.height(); i++ {
-		for j := 0; j < aSrc.width(); j++ {
-			sDst.grid[r1Dst+i][c1Dst+j] = sSrc.grid[r1Src+i][c1Src+j] // copies each cell
-		}
-	}
-	return nil
+func (s *Sheet) TotalArea() *Area {
+	// generates the Area covering all the Sheet
+	// we are sure this doesn't lead to Errors so we don't check conditions
+	return &Area{sh: s, r1: 0, c1: 0, r2: s.rows - 1, c2: s.cols - 1}
 }
 
-// func (s *Sheet) Resize(newRows, newCols int) {
-// 	// to do next
-// }
+func (s *Sheet) Resize(newRows, newCols int, ignoreDataLoss bool) error {
+	var isShrink bool = newRows < s.rows || newCols > s.cols
+	if isShrink && !ignoreDataLoss {
+		return errors.New("Data Loss Error: You will be losing some data by shrinking the size of this spreadsheet")
+	}
+	newSh := New(newRows, newCols, s.Name)
+	if isShrink {
+		// contract the sheet
+		sourceArea, err := NewArea(s, 0, 0, newSh.rows-1, newSh.cols-1)
+		if err != nil {
+			return err // doesn't happen
+		}
+		sourceArea.CopyValuesTo(newSh.TotalArea())
+	} else {
+		// expand/extend the sheet
+		targetArea, err := NewArea(newSh, 0, 0, s.rows-1, s.cols-1)
+		if err != nil {
+			return err // doesn't happen
+		}
+		s.TotalArea().CopyValuesTo(targetArea)
+	}
+	s = newSh // 0 or 100 rule of DB
+	return nil
+}
 
 func (s *Sheet) SetValueAt(row, col, value int) error {
 	if row < 0 || row >= s.rows || col < 0 || col >= s.cols {
