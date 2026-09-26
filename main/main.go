@@ -20,6 +20,9 @@ func main() {
 	case "status":
 		// status
 		statusCmd(os.Args)
+	case "display":
+		// display
+		displayCmd(os.Args)
 	case "create":
 		// create <name> <rows> <cols>
 		createCmd(os.Args)

@@ -131,6 +131,22 @@ func statusCmd(args []string) {
 	}
 }
 
+func displayCmd(args []string) {
+	// displays the sheet in a table-like in terminal, using tabs to visualize the grid
+	// extended version of statusCmd
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) > 2 {
+		fmt.Println("This command takes no arguments!")
+		os.Exit(1)
+	}
+	crntSheet := tryLoadCRNTExitIfFailed()
+
+	rows, cols := crntSheet.Size()
+	fmt.Printf("Displaying Sheet '%s' %dx%d:\n", crntSheet.Name(), rows, cols)
+	fmt.Print(crntSheet.AllGridString())
+}
+
 func createCmd(args []string) {
 	checkInitExitIfNot()
 	if len(args) < 5 {

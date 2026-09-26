@@ -2,6 +2,9 @@ package spreadsheet
 
 import (
 	"errors"
+	"fmt"
+	"strings"
+	"text/tabwriter"
 )
 
 // Sheet represents a 2D grid of integers with a name.
@@ -101,4 +104,20 @@ func (s *Sheet) CountValidsIn(r1, r2, c1, c2 int) int {
 		}
 	}
 	return count
+}
+
+func (s *Sheet) AllGridString() string {
+	// returns a string containing ready-to-print format of the grid of this sheet
+	// I searched for a good solution and found it on stackoverflow :)
+	var builder strings.Builder
+	w := tabwriter.NewWriter(&builder, 1, 1, 1, ' ', 0) // may needs config
+
+	for i := 0; i < s.rows; i++ {
+		for j := 0; j < s.cols; j++ {
+			fmt.Fprintf(w, "%s\t", s.grid[i][j].toString())
+		}
+		fmt.Fprintln(w)
+	}
+	w.Flush() // what about using defer?
+	return builder.String()
 }
