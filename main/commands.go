@@ -83,6 +83,15 @@ func confirmClosing() bool {
 		return false // n/No => No Operation
 	}
 }
+func confirmLosingData() bool {
+	// asks the user to confirm data loss is allowed to shrink the sheet, return true/false to confirm or not
+	var conf string
+	fmt.Println("Do you want to contract the current spreadsheet with possible data loss? (y/n)")
+	fmt.Scan(&conf)
+	conf = strings.ToLower(conf)
+
+	return conf == "y" || conf == "yes"
+}
 
 //////////////////// commands used in CLI (switch in main) ////////////////////
 
@@ -205,7 +214,7 @@ func openCmd(args []string) {
 		fmt.Printf("There is already a spreadsheet open (%s), You should close it first!\n", shName)
 		if !confirmClosing() {
 			fmt.Println("Aborted!")
-			os.Exit(0) // user said no to closing CRNT, so no error code
+			return // user said no to closing CRNT, so no error (code=0)
 		}
 	}
 
@@ -318,6 +327,45 @@ func delCmd(args []string) {
 	}
 
 	fmt.Printf("Deleted Cell at (%d, %d)\n", r, c)
+
+	// autosave
+	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(2)
+	}
+}
+
+func resizeCmd(args []string) {
+	// resizes the current sheet
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: resize <rows> <cols>")
+		os.Exit(1)
+	}
+	r := tryParseIntExitIfFailed(args[2], "The rows")
+	c := tryParseIntExitIfFailed(args[3], "The cols")
+	crntSheet := tryLoadCRNTExitIfFailed()
+	oldR, oldC := crntSheet.Size()
+
+	askAgain, err := crntSheet.Resize(r, c, false)
+	if err != nil {
+		if !askAgain {
+			fmt.Println("Error While Resizing:", err.Error())
+			os.Exit(2)
+		}
+		if !confirmLosingData() {
+			fmt.Println("Resizing Aborted!")
+			return
+		}
+		// ignore data loss
+		_, err = crntSheet.Resize(r, c, true)
+		if err != nil {
+			fmt.Println("Erro While Resizing:", err.Error())
+		}
+	}
+	fmt.Printf("Successfully Resized '%s' from %dx%d to %dx%d\n", crntSheet.Name(), oldR, oldC, r, c)
 
 	// autosave
 	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))

@@ -41,6 +41,9 @@ func main() {
 	case "del":
 		// del <row> <col>
 		delCmd(os.Args)
+	case "resize":
+		// resize <rows> <cols>
+		resizeCmd(os.Args)
 	case "help":
 		// help
 		helpCmd(os.Args)

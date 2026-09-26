@@ -46,29 +46,29 @@ func (s *Sheet) TotalArea() *Area {
 	return &Area{sh: s, r1: 0, c1: 0, r2: s.rows - 1, c2: s.cols - 1}
 }
 
-func (s *Sheet) Resize(newRows, newCols int, ignoreDataLoss bool) error {
-	var isShrink bool = newRows < s.rows || newCols > s.cols
+func (s *Sheet) Resize(newRows, newCols int, ignoreDataLoss bool) (askAgain bool, err error) {
+	var isShrink bool = newRows < s.rows || newCols < s.cols
 	if isShrink && !ignoreDataLoss {
-		return errors.New("Data Loss Error: You will be losing some data by shrinking the size of this spreadsheet")
+		return true, errors.New("Data Loss Error: You will be losing some data by shrinking the size of this spreadsheet")
 	}
 	newSh := New(newRows, newCols, s.name)
 	if isShrink {
 		// contract the sheet
 		sourceArea, err := NewArea(s, 0, 0, newSh.rows-1, newSh.cols-1)
 		if err != nil {
-			return err // doesn't happen
+			return false, err // doesn't happen
 		}
 		sourceArea.CopyValuesTo(newSh.TotalArea())
 	} else {
 		// expand/extend the sheet
 		targetArea, err := NewArea(newSh, 0, 0, s.rows-1, s.cols-1)
 		if err != nil {
-			return err // doesn't happen
+			return false, err // doesn't happen
 		}
 		s.TotalArea().CopyValuesTo(targetArea)
 	}
-	s = newSh // 0 or 100 rule of DB
-	return nil
+	*s = *newSh // 0 or 100 rule of DB
+	return false, nil
 }
 
 func (s *Sheet) SetValueAt(row, col, value int) error {
