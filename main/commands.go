@@ -62,12 +62,16 @@ func tryParsePosExitIfFailed(inpPos string) (int, int) {
 	return r, c
 }
 
-func tryParseAreaExitIfFailed(inpPos1, inpPos2 string) *sheet.Area {
+func tryParseAreaExitIfFailed(inpPos1, inpPos2 string, crntSheet *sheet.Sheet) *sheet.Area {
 	// the same as other tryParse...ExitIfFaileds, but it opens the crntSheet
-	// you can acceess crntSheet by a.sh
+	// you can acceess crntSheet by a.Sheet()
+	// crntSheet is for when you need to check 2 areas in one run (e.g. copy or move)
 	r1, c1 := tryParsePosExitIfFailed(inpPos1)
 	r2, c2 := tryParsePosExitIfFailed(inpPos2)
-	crntSheet := tryLoadCRNTExitIfFailed()
+
+	if crntSheet == nil {
+		crntSheet = tryLoadCRNTExitIfFailed()
+	}
 
 	a, err := sheet.NewArea(crntSheet, r1, c1, r2, c2)
 	if err != nil {
@@ -407,7 +411,7 @@ func countCmd(args []string) {
 		fmt.Println("You should follow this pattern: count <pos1> <pos2>")
 		os.Exit(1)
 	}
-	a := tryParseAreaExitIfFailed(args[2], args[3])
+	a := tryParseAreaExitIfFailed(args[2], args[3], nil)
 	fmt.Println("The number of Valid Cells in the given Area:", a.Count())
 }
 
@@ -418,7 +422,7 @@ func maxCmd(args []string) {
 		fmt.Println("You should follow this pattern: max <pos1> <pos2>")
 		os.Exit(1)
 	}
-	a := tryParseAreaExitIfFailed(args[2], args[3])
+	a := tryParseAreaExitIfFailed(args[2], args[3], nil)
 	max, err := a.Max()
 	if err != nil {
 		fmt.Println("Error While Calculating Max:", err.Error())
@@ -433,7 +437,7 @@ func minCmd(args []string) {
 		fmt.Println("You should follow this pattern: min <pos1> <pos2>")
 		os.Exit(1)
 	}
-	a := tryParseAreaExitIfFailed(args[2], args[3])
+	a := tryParseAreaExitIfFailed(args[2], args[3], nil)
 	min, err := a.Min()
 	if err != nil {
 		fmt.Println("Error While Calculating min:", err.Error())
@@ -448,7 +452,7 @@ func sumCmd(args []string) {
 		fmt.Println("You should follow this pattern: sum <pos1> <pos2>")
 		os.Exit(1)
 	}
-	a := tryParseAreaExitIfFailed(args[2], args[3])
+	a := tryParseAreaExitIfFailed(args[2], args[3], nil)
 	sum, err := a.Sum()
 	if err != nil {
 		fmt.Println("Error While Calculating Sum:", err.Error())
@@ -463,7 +467,7 @@ func averageCmd(args []string) {
 		fmt.Println("You should follow this pattern: average <pos1> <pos2>")
 		os.Exit(1)
 	}
-	a := tryParseAreaExitIfFailed(args[2], args[3])
+	a := tryParseAreaExitIfFailed(args[2], args[3], nil)
 	avg, err := a.Average()
 	if err != nil {
 		fmt.Println("Error While Calculating Average:", err.Error())
@@ -488,12 +492,57 @@ func clearCmd(args []string) {
 		crntSheet := tryLoadCRNTExitIfFailed()
 		a = crntSheet.TotalArea()
 	} else {
-		a = tryParseAreaExitIfFailed(args[2], args[3])
+		a = tryParseAreaExitIfFailed(args[2], args[3], nil)
 	}
 	a.Clear()
 	tryAutoSaveExitIfFailed(a.Sheet()) // a.Sheet() is crntSheet
 
 	fmt.Println("The area is cleared! All cells in the area have been deleted.")
+}
+
+func copyCmd(args []string) {
+	// copies the values of an area to another, but inside a sheet
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 6 {
+		fmt.Println("You should follow this pattern: copy <pos1From> <pos2From> <pos1To> <pos2To>")
+		os.Exit(1)
+	}
+
+	aFrom := tryParseAreaExitIfFailed(args[2], args[3], nil)
+	aTo := tryParseAreaExitIfFailed(args[4], args[5], aFrom.Sheet())
+
+	err := aFrom.CopyValuesTo(aTo)
+	if err != nil {
+		fmt.Println("Error While Copying Areas:", err.Error())
+		os.Exit(1)
+	}
+	tryAutoSaveExitIfFailed(aFrom.Sheet())
+
+	fmt.Printf("Values successfulyy copied.")
+}
+
+func moveCmd(args []string) {
+	// moves the values of an area to another, but inside a sheet
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 6 {
+		fmt.Println("You should follow this pattern: move <pos1From> <pos2From> <pos1To> <pos2To>")
+		os.Exit(1)
+	}
+
+	aFrom := tryParseAreaExitIfFailed(args[2], args[3], nil)
+	aTo := tryParseAreaExitIfFailed(args[4], args[5], aFrom.Sheet())
+
+	err := aFrom.CopyValuesTo(aTo)
+	if err != nil {
+		fmt.Println("Error While Copying Areas:", err.Error())
+		os.Exit(1)
+	}
+	aFrom.Clear() // the only difference between copyCmd and moveCmd
+	tryAutoSaveExitIfFailed(aFrom.Sheet())
+
+	fmt.Printf("Values successfulyy moved.")
 }
 
 func helpCmd(args []string) {

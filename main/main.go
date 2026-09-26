@@ -62,6 +62,12 @@ func main() {
 	case "clear":
 		// clear <pos1> <pos2>
 		clearCmd(os.Args)
+	case "copy":
+		// copy <pos1From> <pos2From> <pos1To> <pos2To>
+		copyCmd(os.Args)
+	case "move":
+		// move <pos1From> <pos2From> <pos1To> <pos2To>
+		moveCmd(os.Args)
 	case "help":
 		// help
 		helpCmd(os.Args)
