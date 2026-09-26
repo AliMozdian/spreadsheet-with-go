@@ -32,6 +32,9 @@ func main() {
 	case "set":
 		// set <row> <col> <value>
 		setCmd(os.Args)
+	case "del":
+		// del <row> <col>
+		delCmd(os.Args)
 	case "help":
 		// help
 		helpCmd(os.Args)

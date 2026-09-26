@@ -73,6 +73,14 @@ func (s *Sheet) GetValueAt(row, col int) (int, error) {
 	return s.grid[row][col].Value()
 }
 
+func (s *Sheet) DeleteValue(row, col int) error {
+	if row < 0 || row >= s.rows || col < 0 || col >= s.cols {
+		return errors.New("Invalid row or column")
+	}
+	s.grid[row][col].clear()
+	return nil
+}
+
 func (s *Sheet) CountValidsIn(r1, r2, c1, c2 int) int {
 	count := 0
 	for i := r1; i <= r2; i++ {

@@ -28,4 +28,5 @@ func (c *cell) setValue(value int) {
 
 func (c *cell) clear() {
 	c.valid = false
+	c.value = 0 // for keeping memory clean and untracable :)
 }
