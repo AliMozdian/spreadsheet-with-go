@@ -74,5 +74,5 @@ func LoadFromFile(filename string, name string) (*Sheet, error) {
 	if err := scanner.Err(); err != nil {
 		return nil, err
 	}
-	return &Sheet{grid: grid, rows: len(grid), cols: len(grid[0]), Name: name}, nil
+	return &Sheet{grid: grid, rows: len(grid), cols: len(grid[0]), name: name}, nil
 }

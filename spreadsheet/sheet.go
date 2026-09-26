@@ -10,7 +10,7 @@ type Sheet struct {
 	grid [][]cell
 	rows int
 	cols int
-	Name string
+	name string
 }
 
 func New(rows, cols int, name string) *Sheet {
@@ -24,8 +24,18 @@ func New(rows, cols int, name string) *Sheet {
 	if name == "" {
 		name = "Untitled"
 	}
-	return &Sheet{grid: grid, rows: rows, cols: cols, Name: name}
+	return &Sheet{grid: grid, rows: rows, cols: cols, name: name}
 }
+
+func (s *Sheet) Size() (int, int) {
+	return s.rows, s.cols
+}
+
+func (s *Sheet) Name() string {
+	return s.name
+}
+
+// Rename to be implemented, uniqueness is important
 
 func (s *Sheet) TotalArea() *Area {
 	// generates the Area covering all the Sheet
@@ -38,7 +48,7 @@ func (s *Sheet) Resize(newRows, newCols int, ignoreDataLoss bool) error {
 	if isShrink && !ignoreDataLoss {
 		return errors.New("Data Loss Error: You will be losing some data by shrinking the size of this spreadsheet")
 	}
-	newSh := New(newRows, newCols, s.Name)
+	newSh := New(newRows, newCols, s.name)
 	if isShrink {
 		// contract the sheet
 		sourceArea, err := NewArea(s, 0, 0, newSh.rows-1, newSh.cols-1)

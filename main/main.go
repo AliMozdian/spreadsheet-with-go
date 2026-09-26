@@ -17,6 +17,9 @@ func main() {
 	case "init":
 		// init
 		initCmd(os.Args)
+	case "status":
+		// status
+		statusCmd(os.Args)
 	case "create":
 		// create <name> <rows> <cols>
 		createCmd(os.Args)

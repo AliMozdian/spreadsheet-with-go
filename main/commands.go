@@ -8,7 +8,8 @@ import (
 	"strings"
 )
 
-func checkOpenSheet() {
+func checkOpenSheetExitIfNot() {
+	// checks if a sheet is there is an open sheet or not
 	// use this in sheet-required commands
 	name, err := crntSheetName()
 	if err != nil {
@@ -21,7 +22,20 @@ func checkOpenSheet() {
 	}
 }
 
-func checkIntExitIfNot(inpValue, title string) int {
+func checkInitExitIfNot() {
+	// checks if the .sheet is initialized or not
+	// use this in every command except help
+	checkList := []string{ROOTD, SAVEDS, CRNT}
+	for _, val := range checkList {
+		_, err := os.Stat(val)
+		if err != nil {
+			fmt.Printf("The %s is not initialized!\nDelete .sheet/ (if exists) and restart everything with 'init' command.\n", val)
+			os.Exit(1)
+		}
+	}
+}
+
+func tryParseIntExitIfFailed(inpValue, title string) int {
 	// Tries parse inpValue to int, in case of rejection, EXITS THE PROGRAM! (code=1)
 	// This exists because I was using this part of code very common,
 	// so I siad why not have it in one line?
@@ -33,9 +47,9 @@ func checkIntExitIfNot(inpValue, title string) int {
 	return val
 }
 
-func checkLoadCRNTExitIfFailed() *sheet.Sheet {
+func tryLoadCRNTExitIfFailed() *sheet.Sheet {
 	// Tries to load CRNT (current focused/opened sheet), in case of error, EXITS THE PRPOGRAM! (code=2)
-	// Almost the same reason as the checkIntExitIfNot for its existance
+	// Almost the same reason as the tryParseIntExitIfFailed for its existance
 	crntSheet, err := loadCRNT()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -52,8 +66,8 @@ func confirmClosing() bool {
 
 	switch conf {
 	case "y", "yes", "s", "save":
-		crnt := checkLoadCRNTExitIfFailed()
-		err := crnt.SaveToFile(fileName(crnt.Name))
+		crnt := tryLoadCRNTExitIfFailed()
+		err := crnt.SaveToFile(fileName(crnt.Name()))
 		if err != nil {
 			fmt.Println("Error While Saving File:", err.Error())
 			os.Exit(2)
@@ -99,7 +113,26 @@ func initCmd(args []string) {
 	file.WriteString("") // for now we don't need to write anything as at init state, crnt is empty
 }
 
+func statusCmd(args []string) {
+	// initialize the .sheet directory and other neccesary assets
+	checkInitExitIfNot()
+	if len(args) > 2 {
+		fmt.Println("This command takes no arguments!")
+		os.Exit(1)
+	}
+
+	crnt, err := loadCRNT()
+	if err == nil {
+		row, col := crnt.Size()
+		fmt.Printf("Current open Sheet: '%s' size: (%d, %d)\n", crnt.Name(), row, col)
+	} else {
+		// a bit risky (if the err was for Error code 2), check later
+		fmt.Println("Currently, there is no open Sheet to work on.")
+	}
+}
+
 func createCmd(args []string) {
+	checkInitExitIfNot()
 	if len(args) < 5 {
 		fmt.Println("You should follow this pattern: create <name> <rows> <cols> --options")
 		os.Exit(1)
@@ -109,12 +142,12 @@ func createCmd(args []string) {
 	if name == "" || name[0] == '-' {
 		fmt.Println("The name cannot be empty or starts with '-'")
 	}
-	rows := checkIntExitIfNot(args[3], "The rows")
-	cols := checkIntExitIfNot(args[4], "The cols")
+	rows := tryParseIntExitIfFailed(args[3], "The rows")
+	cols := tryParseIntExitIfFailed(args[4], "The cols")
 
 	sh := sheet.New(rows, cols, name)
 
-	err := sh.SaveToFile(fileName(sh.Name))
+	err := sh.SaveToFile(fileName(sh.Name()))
 	if err != nil {
 		fmt.Println("Error while Saving File:", err.Error())
 		os.Exit(1)
@@ -128,7 +161,7 @@ func createCmd(args []string) {
 		}
 		if args[i] == "-o" || args[i] == "--online" {
 
-			err = openSheet(sh.Name) // the new created sheet is loaded
+			err = openSheet(sh.Name()) // the new created sheet is loaded
 			if err != nil {
 				fmt.Println("Error While Opening New Created Sheet:", err.Error())
 				os.Exit(2)
@@ -140,6 +173,7 @@ func createCmd(args []string) {
 }
 
 func openCmd(args []string) {
+	checkInitExitIfNot()
 	if len(args) != 3 {
 		fmt.Println("You should follow this pattern: open <name>")
 		os.Exit(1)
@@ -160,7 +194,7 @@ func openCmd(args []string) {
 	}
 
 	// if crntSheet != "nil" {
-	// 	fmt.Printf("There is already a spreadsheet open (%s), You should close it first!\n", crntSheet.Name)
+	// 	fmt.Printf("There is already a spreadsheet open (%s), You should close it first!\n", crntSheet.Name())
 	// 	confirmClosing()
 	// }
 
@@ -177,11 +211,12 @@ func openCmd(args []string) {
 		fmt.Println("Error While Opening Sheet:", err.Error())
 		os.Exit(2)
 	}
-	fmt.Printf("Spreadsheet (%s) is open now...\n", sh.Name)
+	fmt.Printf("Spreadsheet (%s) is open now...\n", sh.Name())
 }
 
 func closeCmd(args []string) {
-	checkOpenSheet()
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
 	if len(args) > 2 {
 		fmt.Println("This command takes no arguments!")
 		os.Exit(1)
@@ -198,14 +233,15 @@ func closeCmd(args []string) {
 
 func getCmd(args []string) {
 	// printout the value of a cell
-	checkOpenSheet()
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
 	if len(args) != 4 {
 		fmt.Println("You should follow this pattern: get <row> <col>")
 		os.Exit(1)
 	}
-	r := checkIntExitIfNot(args[2], "The row")
-	c := checkIntExitIfNot(args[3], "The col")
-	crntSheet := checkLoadCRNTExitIfFailed()
+	r := tryParseIntExitIfFailed(args[2], "The row")
+	c := tryParseIntExitIfFailed(args[3], "The col")
+	crntSheet := tryLoadCRNTExitIfFailed()
 
 	val, err := crntSheet.GetValueAt(r, c)
 	if err != nil {
@@ -219,16 +255,17 @@ func getCmd(args []string) {
 
 func setCmd(args []string) {
 	// set a cell new value (overwrite is allowed)
-	checkOpenSheet()
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
 	if len(args) != 5 {
 		fmt.Println("You should follow this pattern: set <row> <col> <value>")
 		os.Exit(1)
 	}
 
-	r := checkIntExitIfNot(args[2], "The row")
-	c := checkIntExitIfNot(args[3], "The col")
-	val := checkIntExitIfNot(args[4], "The value")
-	crntSheet := checkLoadCRNTExitIfFailed()
+	r := tryParseIntExitIfFailed(args[2], "The row")
+	c := tryParseIntExitIfFailed(args[3], "The col")
+	val := tryParseIntExitIfFailed(args[4], "The value")
+	crntSheet := tryLoadCRNTExitIfFailed()
 
 	err := crntSheet.SetValueAt(r, c, val)
 	if err != nil {
@@ -239,7 +276,7 @@ func setCmd(args []string) {
 	fmt.Printf("New value at (%d, %d): %d\n", r, c, val)
 
 	// autosave
-	err = crntSheet.SaveToFile(fileName(crntSheet.Name))
+	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
@@ -248,14 +285,15 @@ func setCmd(args []string) {
 
 func delCmd(args []string) {
 	// deletes a cell (clears it actually)
-	checkOpenSheet()
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
 	if len(args) != 4 {
 		fmt.Println("You should follow this pattern: del <row> <col>")
 		os.Exit(1)
 	}
-	r := checkIntExitIfNot(args[2], "The row")
-	c := checkIntExitIfNot(args[3], "The col")
-	crntSheet := checkLoadCRNTExitIfFailed()
+	r := tryParseIntExitIfFailed(args[2], "The row")
+	c := tryParseIntExitIfFailed(args[3], "The col")
+	crntSheet := tryLoadCRNTExitIfFailed()
 
 	err := crntSheet.DeleteValue(r, c)
 	if err != nil {
@@ -266,7 +304,7 @@ func delCmd(args []string) {
 	fmt.Printf("Deleted Cell at (%d, %d)\n", r, c)
 
 	// autosave
-	err = crntSheet.SaveToFile(fileName(crntSheet.Name))
+	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(2)
