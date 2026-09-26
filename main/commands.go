@@ -8,6 +8,8 @@ import (
 	"strings"
 )
 
+const POS_SEP string = "-"
+
 func checkOpenSheetExitIfNot() {
 	// checks if a sheet is there is an open sheet or not
 	// use this in sheet-required commands
@@ -45,6 +47,32 @@ func tryParseIntExitIfFailed(inpValue, title string) int {
 		os.Exit(1)
 	}
 	return val
+}
+
+func tryParsePosExitIfFailed(inpPos string) (int, int) {
+	// The same as tryParseIntExitIfFailed, but for dashed-positions in input, required format: <int>-<int>
+	posStr := strings.Split(inpPos, POS_SEP)
+	if len(posStr) != 2 {
+		fmt.Printf("Positions must follow this pattern: <int>%s<int> (don't forget the '%s')\n", POS_SEP, POS_SEP)
+		os.Exit(1)
+	}
+	r := tryParseIntExitIfFailed(posStr[0], "The row value in position-format")
+	c := tryParseIntExitIfFailed(posStr[1], "The col value in position-format")
+
+	return r, c
+}
+
+func tryParseAreaExitIfFailed(inpPos1, inpPos2 string) *sheet.Area {
+	r1, c1 := tryParsePosExitIfFailed(inpPos1)
+	r2, c2 := tryParsePosExitIfFailed(inpPos2)
+	crntSheat := tryLoadCRNTExitIfFailed()
+
+	a, err := sheet.NewArea(crntSheat, r1, c1, r2, c2)
+	if err != nil {
+		fmt.Println("Error While Getting Area:", err.Error())
+		os.Exit(1)
+	}
+	return a
 }
 
 func tryLoadCRNTExitIfFailed() *sheet.Sheet {
@@ -373,6 +401,77 @@ func resizeCmd(args []string) {
 		fmt.Println(err)
 		os.Exit(2)
 	}
+}
+
+func countCmd(args []string) {
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: count <pos1> <pos2>")
+		os.Exit(1)
+	}
+	a := tryParseAreaExitIfFailed(args[2], args[3])
+	fmt.Println("The number of Valid Cells in the given Area:", a.Count())
+}
+
+func maxCmd(args []string) {
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: max <pos1> <pos2>")
+		os.Exit(1)
+	}
+	a := tryParseAreaExitIfFailed(args[2], args[3])
+	max, err := a.Max()
+	if err != nil {
+		fmt.Println("Error While Calculating Max:", err.Error())
+	}
+	fmt.Println("The Max value in the given Area:", max)
+}
+
+func minCmd(args []string) {
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: min <pos1> <pos2>")
+		os.Exit(1)
+	}
+	a := tryParseAreaExitIfFailed(args[2], args[3])
+	min, err := a.Min()
+	if err != nil {
+		fmt.Println("Error While Calculating min:", err.Error())
+	}
+	fmt.Println("The Min value in the given Area:", min)
+}
+
+func sumCmd(args []string) {
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: sum <pos1> <pos2>")
+		os.Exit(1)
+	}
+	a := tryParseAreaExitIfFailed(args[2], args[3])
+	sum, err := a.Sum()
+	if err != nil {
+		fmt.Println("Error While Calculating Sum:", err.Error())
+	}
+	fmt.Println("The Sum of values in the given Area:", sum)
+}
+
+func averageCmd(args []string) {
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+	if len(args) != 4 {
+		fmt.Println("You should follow this pattern: average <pos1> <pos2>")
+		os.Exit(1)
+	}
+	a := tryParseAreaExitIfFailed(args[2], args[3])
+	avg, err := a.Average()
+	if err != nil {
+		fmt.Println("Error While Calculating Average:", err.Error())
+	}
+	fmt.Println("The Average of values in the given Area:", avg)
 }
 
 func helpCmd(args []string) {

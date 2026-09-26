@@ -44,6 +44,21 @@ func main() {
 	case "resize":
 		// resize <rows> <cols>
 		resizeCmd(os.Args)
+	case "count":
+		// count <pos1> <pos2>
+		countCmd(os.Args)
+	case "max":
+		// max <pos1> <pos2>
+		maxCmd(os.Args)
+	case "min":
+		// min <pos1> <pos2>
+		minCmd(os.Args)
+	case "sum":
+		// sum <pos1> <pos2>
+		sumCmd(os.Args)
+	case "average":
+		// average <pos1> <pos2>
+		averageCmd(os.Args)
 	case "help":
 		// help
 		helpCmd(os.Args)

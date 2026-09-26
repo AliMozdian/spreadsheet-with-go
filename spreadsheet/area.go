@@ -2,6 +2,7 @@ package spreadsheet
 
 import (
 	"errors"
+	"slices"
 )
 
 // A part of a Sheet (2D Range) -has access to the parent Sheet
@@ -54,4 +55,62 @@ func (aSrc *Area) CopyValuesTo(aDst *Area) error {
 		}
 	}
 	return nil
+}
+
+func (a *Area) Values() []int {
+	// useful for developing other functions working on the values (not-their positions) in some area
+	vals := make([]int, 0, a.height()*a.width())
+	for i := a.r1; i <= a.r2; i++ {
+		for j := a.c1; j <= a.c2; j++ {
+			if a.sh.grid[i][j].isValid() {
+				vals = append(vals, a.sh.grid[i][j].value)
+			}
+		}
+	}
+	return vals
+}
+
+func (a *Area) Count() int {
+	vals := a.Values()
+	return len(vals)
+}
+
+func (a *Area) Max() (int, error) {
+	vals := a.Values()
+	if len(vals) == 0 {
+		return 0, errors.New("There is no value in this area!")
+	}
+	return slices.Max((vals)), nil
+}
+
+func (a *Area) Min() (int, error) {
+	vals := a.Values()
+	if len(vals) == 0 {
+		return 0, errors.New("There is no value in this area!")
+	}
+	return slices.Min((vals)), nil
+}
+
+func (a *Area) Sum() (int, error) {
+	vals := a.Values()
+	if len(vals) == 0 {
+		return 0, errors.New("There is no value in this area!")
+	}
+	sum := 0
+	for _, v := range vals {
+		sum += v
+	}
+	return sum, nil
+}
+
+func (a *Area) Average() (float64, error) {
+	vals := a.Values()
+	if len(vals) == 0 {
+		return 0, errors.New("There is no value in this area!")
+	}
+	sum := 0
+	for _, v := range vals {
+		sum += v
+	}
+	return float64(sum / len(vals)), nil
 }

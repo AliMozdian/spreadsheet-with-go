@@ -94,18 +94,6 @@ func (s *Sheet) DeleteValue(row, col int) error {
 	return nil
 }
 
-func (s *Sheet) CountValidsIn(r1, r2, c1, c2 int) int {
-	count := 0
-	for i := r1; i <= r2; i++ {
-		for j := c1; j <= c2; j++ {
-			if s.grid[i][j].isValid() {
-				count++
-			}
-		}
-	}
-	return count
-}
-
 func (s *Sheet) AllGridString() string {
 	// returns a string containing ready-to-print format of the grid of this sheet
 	// I searched for a good solution and found it on stackoverflow :)
