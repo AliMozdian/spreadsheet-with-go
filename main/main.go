@@ -59,6 +59,9 @@ func main() {
 	case "average":
 		// average <pos1> <pos2>
 		averageCmd(os.Args)
+	case "clear":
+		// clear <pos1> <pos2>
+		clearCmd(os.Args)
 	case "help":
 		// help
 		helpCmd(os.Args)

@@ -23,6 +23,10 @@ func NewArea(sh *Sheet, r1, c1, r2, c2 int) (*Area, error) {
 	return &Area{sh: sh, r1: r1, c1: c1, r2: r2, c2: c2}, nil
 }
 
+func (a *Area) Sheet() *Sheet {
+	return a.sh // so you can't change it outside of the package
+}
+
 func (a Area) height() int {
 	return a.r2 - a.r1 + 1
 }
@@ -113,4 +117,13 @@ func (a *Area) Average() (float64, error) {
 		sum += v
 	}
 	return float64(sum / len(vals)), nil
+}
+
+func (a *Area) Clear() {
+	// deletes all cells in the area (set valid to false)
+	for i := a.r1; i <= a.r2; i++ {
+		for j := a.c1; j <= a.c2; j++ {
+			a.sh.grid[i][j].clear()
+		}
+	}
 }

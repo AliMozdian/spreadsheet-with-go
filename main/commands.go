@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-const POS_SEP string = "-"
+const POS_SEP string = ","
 
 func checkOpenSheetExitIfNot() {
 	// checks if a sheet is there is an open sheet or not
@@ -63,11 +63,13 @@ func tryParsePosExitIfFailed(inpPos string) (int, int) {
 }
 
 func tryParseAreaExitIfFailed(inpPos1, inpPos2 string) *sheet.Area {
+	// the same as other tryParse...ExitIfFaileds, but it opens the crntSheet
+	// you can acceess crntSheet by a.sh
 	r1, c1 := tryParsePosExitIfFailed(inpPos1)
 	r2, c2 := tryParsePosExitIfFailed(inpPos2)
-	crntSheat := tryLoadCRNTExitIfFailed()
+	crntSheet := tryLoadCRNTExitIfFailed()
 
-	a, err := sheet.NewArea(crntSheat, r1, c1, r2, c2)
+	a, err := sheet.NewArea(crntSheet, r1, c1, r2, c2)
 	if err != nil {
 		fmt.Println("Error While Getting Area:", err.Error())
 		os.Exit(1)
@@ -84,6 +86,15 @@ func tryLoadCRNTExitIfFailed() *sheet.Sheet {
 		os.Exit(2)
 	}
 	return crntSheet
+}
+
+func tryAutoSaveExitIfFailed(crntSheet *sheet.Sheet) {
+	// used for auto-saveing the crntSheet at the end of modifying commands
+	err := crntSheet.SaveToFile(fileName(crntSheet.Name()))
+	if err != nil {
+		fmt.Println("Error While Auto Saving:", err)
+		os.Exit(2)
+	}
 }
 
 func confirmClosing() bool {
@@ -326,14 +337,9 @@ func setCmd(args []string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("New value at (%d, %d): %d\n", r, c, val)
+	tryAutoSaveExitIfFailed(crntSheet)
 
-	// autosave
-	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
+	fmt.Printf("New value at (%d, %d): %d\n", r, c, val)
 }
 
 func delCmd(args []string) {
@@ -354,14 +360,9 @@ func delCmd(args []string) {
 		os.Exit(1) // this is not a code.2 error because the reason mostly is a user miss-input case
 	}
 
-	fmt.Printf("Deleted Cell at (%d, %d)\n", r, c)
+	tryAutoSaveExitIfFailed(crntSheet)
 
-	// autosave
-	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
+	fmt.Printf("Deleted Cell at (%d, %d)\n", r, c)
 }
 
 func resizeCmd(args []string) {
@@ -393,14 +394,10 @@ func resizeCmd(args []string) {
 			fmt.Println("Erro While Resizing:", err.Error())
 		}
 	}
-	fmt.Printf("Successfully Resized '%s' from %dx%d to %dx%d\n", crntSheet.Name(), oldR, oldC, r, c)
 
-	// autosave
-	err = crntSheet.SaveToFile(fileName(crntSheet.Name()))
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(2)
-	}
+	tryAutoSaveExitIfFailed(crntSheet)
+
+	fmt.Printf("Successfully Resized '%s' from %dx%d to %dx%d\n", crntSheet.Name(), oldR, oldC, r, c)
 }
 
 func countCmd(args []string) {
@@ -472,6 +469,31 @@ func averageCmd(args []string) {
 		fmt.Println("Error While Calculating Average:", err.Error())
 	}
 	fmt.Println("The Average of values in the given Area:", avg)
+}
+
+func clearCmd(args []string) {
+	// deletes all cell in the area
+	checkInitExitIfNot()
+	checkOpenSheetExitIfNot()
+
+	var allCase bool = len(args) == 3 && args[2] == "all"
+	if len(args) != 4 && !allCase {
+		fmt.Println("You should follow this pattern: clear <pos1> <pos2>")
+		fmt.Println("Or this pattern: clear all")
+		os.Exit(1)
+	}
+
+	var a *sheet.Area
+	if allCase {
+		crntSheet := tryLoadCRNTExitIfFailed()
+		a = crntSheet.TotalArea()
+	} else {
+		a = tryParseAreaExitIfFailed(args[2], args[3])
+	}
+	a.Clear()
+	tryAutoSaveExitIfFailed(a.Sheet()) // a.Sheet() is crntSheet
+
+	fmt.Println("The area is cleared! All cells in the area have been deleted.")
 }
 
 func helpCmd(args []string) {
